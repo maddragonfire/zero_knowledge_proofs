@@ -24,17 +24,17 @@ key `Y = 2**6 % 23 = 18`.
 
 | Step | What happens | What crosses the wire |
 | --- | --- | --- |
-| 1. You commit | Pick a fresh secret nonce, here `r = 7`. Compute `R = pow(2, r, 23)`. | You → me: `R = 13` |
-| 2. I challenge | After receiving 13, I draw a random challenge, here `c = 4`. | Me → you: `c = 4` |
-| 3. You respond | Compute `s = (r + c*x) % 11 = (7 + 4*6) % 11`. | You → me: `s = 9` |
+| 1. You commit | Pick a fresh secret nonce, here `r = 5`. Compute `R = pow(2, r, 23)`. | You → me: `R = 9` |
+| 2. I challenge | After receiving 9, I draw a random challenge, here `c = 4`. | Me → you: `c = 4` |
+| 3. You respond | Compute `s = (r + c*x) % 11 = (5 + 4*6) % 11`. | You → me: `s = 7` |
 
 I can now check your answer using only the public values:
 
 ```python
->>> pow(2, 9, 23)                # g**s
-6
->>> 13 * pow(18, 4, 23) % 23     # R * Y**c
-6
+>>> pow(2, 7, 23)                # g**s
+13
+>>> 9 * pow(18, 4, 23) % 23      # R * Y**c
+13
 ```
 
 Both sides agree because $g^{r+cx}=g^r (g^x)^c$. You can answer any
@@ -45,15 +45,15 @@ with probability $1/11$, and the public key is small enough to brute-force.
 ## Why does this count as zero knowledge?
 
 Put yourself in the verifier's seat. You can manufacture the *same* transcript
-with just the public key. Pick `c = 4` and `s = 9` first, then work backward:
+with just the public key. Pick `c = 4` and `s = 7` first, then work backward:
 
 ```python
->>> pow(2, 9, 23) * pow(18, -4, 23) % 23
-13
+>>> pow(2, 7, 23) * pow(18, -4, 23) % 23
+9
 ```
 
-That gives `(R, c, s) = (13, 4, 9)`. In a live exchange you would have
-insisted on seeing 13 **before** choosing 4. Someone reading your saved
+That gives `(R, c, s) = (9, 4, 7)`. In a live exchange you would have
+insisted on seeing 9 **before** choosing 4. Someone reading your saved
 transcript has no such assurance.
 
 The claim is stronger than being able to reproduce this one example.
@@ -66,11 +66,11 @@ reveals only what the verifier could have sampled from the public key alone.
 ## Why the nonce is single-use
 
 Suppose you answer a second challenge `c = 5` for that same commitment.
-Your second response would be `s = 4`. Subtracting the two response
+Your second response would be `s = 2`. Subtracting the two response
 equations cancels the nonce, and I recover your private key:
 
 ```python
->>> (4 - 9) * pow(5 - 4, -1, 11) % 11
+>>> (2 - 7) * pow(5 - 4, -1, 11) % 11
 6
 ```
 
