@@ -1,5 +1,12 @@
 # Prove you know a private key
 
+Two standalone Python demos use different kinds of keys. Run
+`python3 schnorr.py --toy` for a secret exponent or
+`python3 graph_isomorphism.py` for a secret permutation of graph vertices.
+Both use only the Python 3.8+ standard library.
+
+## Schnorr identification
+
 Suppose you've already given me a public key `Y`. You claim to know the
 secret exponent `x` that produced it. Schnorr identification lets me test that
 claim by asking you a fresh question after you commit to the round.
@@ -84,3 +91,37 @@ The interactive protocol and its security properties are described in
 The RFC subtracts the challenge term in the response. This demo adds it and
 moves the factor to the other side of the verification equation. The large
 group parameters come from [RFC 3526, §3](https://www.rfc-editor.org/rfc/rfc3526.html#section-3).
+
+## Graph isomorphism
+
+```sh
+python3 graph_isomorphism.py --rounds 3
+```
+
+You publish two graphs on the same six vertices. Your private key is a
+permutation $\pi$ such that $G_1=\pi(G_0)$. For each round you pick a fresh
+uniform permutation $r$ and send the commitment $H=r(G_1)$. Only then does
+the verifier flip a fair coin to choose the challenge.
+
+| Challenge | Permutation you send | What the verifier checks |
+| --- | --- | --- |
+| 0 | $r\circ\pi$, taking each vertex through $G_0\to G_1\to H$ | Relabeling $G_0$ gives exactly $H$. |
+| 1 | $r$, taking each vertex through $G_1\to H$ | Relabeling $G_1$ gives exactly $H$. |
+
+The response tuple gives the new label of each vertex in order. The verifier
+checks that every label occurs exactly once and that the edges match. If two
+public graphs are non-isomorphic, a single commitment can pass at most one
+challenge. Passing all $k$ independent live rounds then has probability at
+most $2^{-k}$.
+
+The script also prints a simulated transcript. The simulator picks the bit
+and a random response first, then relabels the chosen public graph to obtain
+$H$. For either bit, a live response is also a uniformly random permutation,
+so the honest verifier sees the same distribution. Answer only one challenge
+per commitment. Given maps $f_0:G_0\to H$ and $f_1:G_1\to H$, anyone can
+compute an isomorphism $f_1^{-1}\circ f_0:G_0\to G_1$.
+
+This graph is deliberately easy to match by eye. Watrous proves that the
+interactive protocol stays zero knowledge against an efficient quantum
+verifier. Impersonation is a separate question: anyone who can match the two
+public graphs can act as the prover. [Protocol and quantum result, §3](https://arxiv.org/pdf/quant-ph/0511020)
